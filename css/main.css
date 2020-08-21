@@ -1,0 +1,19 @@
+.ctrl-panel {   
+    background-color: #ffffff;
+    border-right: solid #ffffff 1px;
+    border-bottom: solid #ffffff 1px;
+    left: 30px;
+    width: 374px;
+    max-height: calc(100% - 100px);
+    display: block;
+    font-size: 12px;
+    left: 10px;
+    padding: 10px;
+    position: absolute;
+    text-align: justify;
+    top: 10px;
+    z-index: 10;
+    -webkit-transition: left 0.5s, -webkit-transform 2s;
+    transition: left 0.5s, transform 2s;
+   clear: both;
+}
