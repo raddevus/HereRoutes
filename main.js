@@ -1,5 +1,6 @@
 var markersButton = document.querySelector("#markersButton");
 var routeButton = document.querySelector("#routeButton");
+var waypointButton = document.querySelector("#waypointButton");
 var fromTextInput = document.querySelector("#start");
 var destTextInput = document.querySelector("#dest");
 var removeFromButton = document.querySelector("#removeFromButton");
@@ -11,6 +12,7 @@ var group = null;
 var router = null;
 var routeRequestParams = null;
 var allLocations = [];
+var allWaypoints = [];
 
 markersButton.onclick = () => {
    
@@ -22,10 +24,10 @@ markersButton.onclick = () => {
   var service = platform.getSearchService();
   allLocations = [];
   if (fromTextInput.value != ""){
-    addMapMarkers(service,fromTextInput.value);
+    addMapMarkers(service,fromTextInput.value,allLocations);
   }
   if (destTextInput.value != ""){
-    addMapMarkers(service,destTextInput.value);
+    addMapMarkers(service,destTextInput.value,allLocations);
   }
 }
 
@@ -59,8 +61,60 @@ removeDestButton.onclick = () => {
   destTextInput.focus();
 }
 
+waypointButton.onclick = () =>{
+  var platform = new H.service.Platform({
+    'apikey': YOUR_API_KEY
+  });
 
-function addMapMarkers(service, textInputValue){
+  // Get an instance of the geocoding service:
+  var service = platform.getSearchService();
+  
+  addMapMarkers(service,destTextInput.value,allWaypoints);
+  
+}
+
+function calcWaypoints(){
+  var waypointQuery = buildWaypointQueryString();
+  console.log(waypointQuery);
+}
+
+function buildWaypointQueryString(){
+  var waypointString = "https://wse.ls.hereapi.com/2/findsequence.json?apiKey=" + YOUR_API_KEY;
+  waypointString += "&start=" + allWaypoints[0].address.city + ";" + allWaypoints[0].position.lat + "," + allWaypoints[0].position.lng;
+  // j = 1 because we've already used the first item (0) above
+  //allWaypoints-2 because we stop on the 2nd to last item
+  if (allWaypoints.length > 2){
+    for (var j=1;j<=allWaypoints.length-2;j++)
+    {
+      var tempString = "&destination" + j + "=";
+      tempString += allWaypoints[j].address.city + ";";
+      tempString += allWaypoints[j].position.lat + ","+allWaypoints[j].position.lng;
+      console.log(tempString);
+    }
+    waypointString += tempString;
+    waypointString += "&end=" + allWaypoints[j].address.city + ";" + allWaypoints[j].position.lat + "," + allWaypoints[j].position.lng;
+  }
+  else{
+    waypointString += "&end=" + allWaypoints[1].address.city + ";" + allWaypoints[1].position.lat + "," + allWaypoints[1].position.lng;
+  }
+  waypointString += "&mode=fastest;car";  
+  // allWaypoints.forEach((w) =>{
+  //     console.log(w.address.city);
+  //     console.log(w.position.lat);
+  //     console.log(w.position.lng);
+  //   });
+  /* 
+  &destination1=FranfurtCentralStation;50.1073,8.6647
+  &destination2=DarmstadtCentralStation;49.8728,8.6326
+  &destination3=FrankfurtAirport;50.0505,8.5698
+  &destination4=HanauCentralStation;50.1218,8.9298
+  &end=MainzCentralStation;50.0021,8.259
+  &improveFor=time&mode=fastest;car;traffic:enabled; */
+  return waypointString;
+}
+
+
+function addMapMarkers(service, textInputValue, targetArray){
   // Call the geocode method with the geocoding parameters,
   // the callback and an error callback function (called if a
   // communication error occurs):
@@ -70,7 +124,7 @@ function addMapMarkers(service, textInputValue){
     // Add a marker for each location found
     result.items.forEach((item) => {
         console.log(item);
-        allLocations.push(item);
+        targetArray.push(item);
         var html = "<div>" + item.title + "</div>";
         var marker = new H.map.Marker(item.position)
         group = new H.map.Group();
