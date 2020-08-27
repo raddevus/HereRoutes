@@ -4,6 +4,7 @@ var fromTextInput = document.querySelector("#start");
 var destTextInput = document.querySelector("#dest");
 var removeFromButton = document.querySelector("#removeFromButton");
 var removeDestButton = document.querySelector("#removeDestButton");
+var routeInstructionsContainer = document.querySelector("#panel");
 
 console.log(map);
 var group = null;
@@ -12,6 +13,7 @@ var routeRequestParams = null;
 var allLocations = [];
 
 markersButton.onclick = () => {
+   
   var platform = new H.service.Platform({
       'apikey': YOUR_API_KEY
     });
@@ -27,7 +29,19 @@ markersButton.onclick = () => {
   }
 }
 
+function genRoute(){
+  var origin = allLocations[0].position.lat + "," + allLocations[0].position.lng;
+  var dest = allLocations[1].position.lat + "," + allLocations[1].position.lng;
+  var finalUrl = 'https://router.hereapi.com/v8/routes?transportMode=car&origin=' + origin + '&destination=' + dest + '&return=polyline,turnByTurnActions,actions,instructions,travelSummary&apikey=' + YOUR_API_KEY;
+  console.log(finalUrl);
+  fetch(finalUrl)
+  .then(response => response.json())
+  .then(data => addRouteShapeToMap(data.routes[0]));
+
+}
+
 routeButton.onclick = () => {
+  genRoute(); return;
   if (allLocations.length < 2){
     console.log("need to set markers first");
     return;
@@ -105,7 +119,6 @@ function addMarkerToGroup(marker, html) {
         transportMode: 'car',
         origin: start.lat+","+start.lng, 
         destination: end.lat+","+end.lng,
-        waypoint0: '38.25489,-85.76666',
         return: 'polyline,turnByTurnActions,actions,instructions,travelSummary'
       };
     
@@ -154,22 +167,22 @@ function addMarkerToGroup(marker, html) {
     });
   }
 
-  function addWaypointsToPanel(route) {
-    var nodeH3 = document.createElement('h3'),
-        labels = [];
-  
-    route.sections.forEach((section) => {
-      labels.push(
-        section.turnByTurnActions[0].nextRoad.name[0].value)
-      labels.push(
-        section.turnByTurnActions[section.turnByTurnActions.length - 1].currentRoad.name[0].value)
-    });
-    
-    nodeH3.textContent = labels.join(' - ');
-    routeInstructionsContainer.innerHTML = '';
-    routeInstructionsContainer.appendChild(nodeH3);
-  }
+function addWaypointsToPanel(route) {
+  var nodeH3 = document.createElement('h3'),
+      labels = [];
 
-  function onError(error) {
-    alert('Can\'t reach the remote server');
-  }
+  route.sections.forEach((section) => {
+    labels.push(
+      section.turnByTurnActions[0].nextRoad.name[0].value)
+    labels.push(
+      section.turnByTurnActions[section.turnByTurnActions.length - 1].currentRoad.name[0].value)
+  });
+  
+  nodeH3.textContent = labels.join(' - ');
+  routeInstructionsContainer.innerHTML = '';
+  routeInstructionsContainer.appendChild(nodeH3);
+}
+
+function onError(error) {
+  alert('Can\'t reach the remote server');
+}
