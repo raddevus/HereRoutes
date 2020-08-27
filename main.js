@@ -2,6 +2,8 @@ var markersButton = document.querySelector("#markersButton");
 var routeButton = document.querySelector("#routeButton");
 var fromTextInput = document.querySelector("#start");
 var destTextInput = document.querySelector("#dest");
+var removeFromButton = document.querySelector("#removeFromButton");
+var removeDestButton = document.querySelector("#removeDestButton");
 
 console.log(map);
 var group = null;
@@ -32,6 +34,17 @@ routeButton.onclick = () => {
   }
   calcRoute(allLocations[0].position,allLocations[1].position);
 }
+
+removeFromButton.onclick = () => {
+  fromTextInput.value = "";
+  fromTextInput.focus();
+}
+
+removeDestButton.onclick = () => {
+  destTextInput.value = "";
+  destTextInput.focus();
+}
+
 
 function addMapMarkers(service, textInputValue){
   // Call the geocode method with the geocoding parameters,

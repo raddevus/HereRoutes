@@ -21,13 +21,19 @@
     <div class="ctrl-panel">
       <div class="form-horizontal">
           <div class="form-group row">
-              <div class="col-sm-12">
+              <div class="input-group col-sm-12">
                   <input required  type='text' id='start' class='form-control clear' value='' placeholder="From"/>
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" id="removeFromButton">&#10006;</span></button>
+                  </div>
               </div>
           </div>
           <div class="form-group row">
-              <div class="col-sm-12">
+              <div class="input-group col-sm-12">
                   <input type='text' id='dest' class='form-control clear' size='40' value='' required placeholder="To"/>
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" id="removeDestButton">&#10006;</span></button>
+                  </div>
               </div>
           </div>
       </div>
