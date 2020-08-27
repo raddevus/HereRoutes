@@ -12,6 +12,7 @@
     <script type="text/javascript" charset="UTF-8" src="https://js.api.here.com/v3/3.1/mapsjs-data.js"></script>
     <!-- apikey.js is purposely not included in this repository-->
     <script src="apikey.js"></script>
+    <script src="https://tollcost.now.sh/include.js"></script>
     <link rel="stylesheet" type="text/css" href="https://js.api.here.com/v3/3.1/mapsjs-ui.css" />
     <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="css/main.css"/>
@@ -21,25 +22,28 @@
       <div class="form-horizontal">
           <div class="form-group row">
               <div class="col-sm-12">
-                  <input required  type='text' id='start' class='form-control ' value='' placeholder="From"/>
+                  <input required  type='text' id='start' class='form-control clear' value='' placeholder="From"/>
               </div>
           </div>
           <div class="form-group row">
               <div class="col-sm-12">
-                  <input type='text' id='dest' class='form-control' size='40' value='' required placeholder="To"/>
+                  <input type='text' id='dest' class='form-control clear' size='40' value='' required placeholder="To"/>
               </div>
           </div>
       </div>
       <div class="form-horizontal">
         <div class="form-group" style="text-align: center">
             <div class="col-sm-9">
-                <input type="submit" id="routeButton2" class="btn btn-primary" value="submit" />
+                <button id="markersButton" class="btn btn-primary">Add Markers</button>
+                <button id="routeButton" class="btn btn-primary">Add Route</button>
             </div>
         </div>
       </div>
+      <div id="feedbackTxt"></div>
     </div>
   <!-- Here is div in which the map will render -->
   <div id="mapContainer"></div>
+  <div id="mydiv"></div>
   <script>
     // Initialize the platform object:
     var platform = new H.service.Platform({
@@ -54,10 +58,19 @@
     document.getElementById('mapContainer'),
     maptypes.vector.normal.map,
     {
-      zoom: 8,
+      zoom: 5,
       center: { lat:40.730610,lng:-73.935242 }
     });
+    var behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
     var ui = H.ui.UI.createDefault(map, maptypes);
   </script>
+  <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+		integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+		crossorigin="anonymous"></script>
+  
+  <script src="main.js"></script>
   </body>
 </html>
