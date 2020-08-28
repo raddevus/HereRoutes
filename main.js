@@ -43,12 +43,30 @@ function genRoute(){
 }
 
 routeButton.onclick = () => {
-  genRoute(); return;
+  //genRoute(); return;
   if (allLocations.length < 2){
     console.log("need to set markers first");
     return;
   }
-  calcRoute(allLocations[0].position,allLocations[1].position);
+  // 1. create temp array with all locations and waypoints
+  var allRoutes = [];
+  
+  // allLocations[0] is start of journey
+  allRoutes.push(allLocations[0]);
+  
+  allWaypoints.forEach(w => {
+    allRoutes.push(w);
+  });
+  // allLocations[1] is destination
+  allRoutes.push(allLocations[1]);
+
+  console.log("allRoutes length : " + allRoutes.length);
+  // 2. iterate thru and add each section of the entire route
+  for (var i = 0;i < allRoutes.length-1;i++){
+    calcRoute(allRoutes[i].position,allRoutes[i+1].position);
+  }
+  
+
 }
 
 removeFromButton.onclick = () => {
@@ -74,8 +92,8 @@ waypointButton.onclick = () =>{
 }
 
 function calcWaypoints(){
-  if ((allLocations.length < 2) || allWaypoints == null || allWaypoints.length < 1){
-    console.log("Need at least To & From and 1 waypoint to calculate path.");
+  if (allLocations.length < 2) {
+    console.log("Need at least To & From to calculate path.");
     return;
   }
   var waypointQuery = buildWaypointQueryString();
@@ -85,9 +103,8 @@ function calcWaypoints(){
 function buildWaypointQueryString(){
   var waypointString = "https://wse.ls.hereapi.com/2/findsequence.json?apiKey=" + YOUR_API_KEY;
   waypointString += "&start=" + allLocations[0].address.city + ";" + allLocations[0].position.lat + "," + allLocations[0].position.lng;
-  // j = 1 because we've already used the first item (0) above
-  //allWaypoints-2 because we stop on the 2nd to last item
-  if (allWaypoints.length > 0){
+  
+  if (allWaypoints != null && allWaypoints.length > 0){
     for (var j=0;j<allWaypoints.length;j++)
     {
       var tempString = "&destination" + j + "=";
@@ -96,11 +113,11 @@ function buildWaypointQueryString(){
       waypointString += tempString;
       console.log(tempString);
     }
-    waypointString += "&end=" + allLocations[1].address.city + ";" + allLocations[1].position.lat + "," + allLocations[1].position.lng;
   }
-  else{
-    waypointString += "&end=" + allWaypoints[1].address.city + ";" + allWaypoints[1].position.lat + "," + allWaypoints[1].position.lng;
-  }
+  
+  waypointString += "&end=" + allLocations[1].address.city + ";" + allLocations[1].position.lat + "," + allLocations[1].position.lng;
+  
+  waypointString += "&improveFor=distance";
   waypointString += "&mode=fastest;car";  
   // allWaypoints.forEach((w) =>{
   //     console.log(w.address.city);
@@ -199,8 +216,8 @@ function addMarkerToGroup(marker, html) {
     * in the functions below:
     */
     addRouteShapeToMap(route);
-    addWaypointsToPanel(route);
-    allLocations = [];
+    //addWaypointsToPanel(route);
+    //allLocations = [];
   }
 
   function addRouteShapeToMap(route){
