@@ -1,4 +1,4 @@
-var markersButton = document.querySelector("#markersButton");
+var tripButton = document.querySelector("#tripButton");
 var routeButton = document.querySelector("#routeButton");
 var waypointButton = document.querySelector("#waypointButton");
 var fromTextInput = document.querySelector("#start");
@@ -11,10 +11,10 @@ console.log(map);
 var group = null;
 var router = null;
 var routeRequestParams = null;
-var allLocations = [];
+var tripPoints = [];
 var allWaypoints = [];
 
-markersButton.onclick = () => {
+tripButton.onclick = () => {
    
   var platform = new H.service.Platform({
       'apikey': YOUR_API_KEY
@@ -22,18 +22,18 @@ markersButton.onclick = () => {
   
   // Get an instance of the geocoding service:
   var service = platform.getSearchService();
-  allLocations = [];
+  tripPoints = [];
   if (fromTextInput.value != ""){
-    addMapMarkers(service,fromTextInput.value,allLocations);
+    addMapMarkers(service,fromTextInput.value,tripPoints);
   }
   if (destTextInput.value != ""){
-    addMapMarkers(service,destTextInput.value,allLocations);
+    addMapMarkers(service,destTextInput.value,tripPoints);
   }
 }
 
 function genRoute(){
-  var origin = allLocations[0].position.lat + "," + allLocations[0].position.lng;
-  var dest = allLocations[1].position.lat + "," + allLocations[1].position.lng;
+  var origin = tripPoints[0].position.lat + "," + tripPoints[0].position.lng;
+  var dest = tripPoints[1].position.lat + "," + tripPoints[1].position.lng;
   var finalUrl = 'https://router.hereapi.com/v8/routes?transportMode=car&origin=' + origin + '&destination=' + dest + '&return=polyline,turnByTurnActions,actions,instructions,travelSummary&apikey=' + YOUR_API_KEY;
   console.log(finalUrl);
   fetch(finalUrl)
@@ -44,29 +44,24 @@ function genRoute(){
 
 routeButton.onclick = () => {
   //genRoute(); return;
-  if (allLocations.length < 2){
-    console.log("need to set markers first");
+  if (tripPoints.length < 2){
+    console.log("need add start and end (trip points) first");
     return;
   }
   // 1. create temp array with all locations and waypoints
   var allRoutes = [];
   
-  // allLocations[0] is start of journey
-  allRoutes.push(allLocations[0]);
+  // tripPoints[0] is start of journey
+  allRoutes.push(tripPoints[0]);
   var waypointRouteCounter = 0;
-  // allWaypoints.forEach(w => {
-  //   allRoutes.push(w);
-  //   waypointRouteCounter++;
-  //   console.log(w.address.city);
-  // });
-
+  
   for (var i = 0;i < allWaypoints.length;i++){
     allRoutes.push(allWaypoints[i]);
   }
 
   console.log("waypointRouteCounter : " + waypointRouteCounter);
-  // allLocations[1] is destination
-  allRoutes.push(allLocations[1]);
+  // tripPoints[1] is destination
+  allRoutes.push(tripPoints[1]);
 
   console.log("allRoutes length : " + allRoutes.length);
   // 2. iterate thru and add each section of the entire route
@@ -102,7 +97,7 @@ waypointButton.onclick = () =>{
 }
 
 function calcWaypoints(){
-  if (allLocations.length < 2) {
+  if (tripPoints.length < 2) {
     console.log("Need at least To & From to calculate path.");
     return;
   }
@@ -112,7 +107,7 @@ function calcWaypoints(){
 
 function buildWaypointQueryString(){
   var waypointString = "https://wse.ls.hereapi.com/2/findsequence.json?apiKey=" + YOUR_API_KEY;
-  waypointString += "&start=" + allLocations[0].address.city + ";" + allLocations[0].position.lat + "," + allLocations[0].position.lng;
+  waypointString += "&start=" + tripPoints[0].address.city + ";" + tripPoints[0].position.lat + "," + tripPoints[0].position.lng;
   
   if (allWaypoints != null && allWaypoints.length > 0){
     for (var j=0;j<allWaypoints.length;j++)
@@ -125,7 +120,7 @@ function buildWaypointQueryString(){
     }
   }
   
-  waypointString += "&end=" + allLocations[1].address.city + ";" + allLocations[1].position.lat + "," + allLocations[1].position.lng;
+  waypointString += "&end=" + tripPoints[1].address.city + ";" + tripPoints[1].position.lat + "," + tripPoints[1].position.lng;
   
   waypointString += "&improveFor=distance";
   waypointString += "&mode=fastest;car";  
