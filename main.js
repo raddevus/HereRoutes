@@ -74,25 +74,29 @@ waypointButton.onclick = () =>{
 }
 
 function calcWaypoints(){
+  if ((allLocations.length < 2) || allWaypoints == null || allWaypoints.length < 1){
+    console.log("Need at least To & From and 1 waypoint to calculate path.");
+    return;
+  }
   var waypointQuery = buildWaypointQueryString();
   console.log(waypointQuery);
 }
 
 function buildWaypointQueryString(){
   var waypointString = "https://wse.ls.hereapi.com/2/findsequence.json?apiKey=" + YOUR_API_KEY;
-  waypointString += "&start=" + allWaypoints[0].address.city + ";" + allWaypoints[0].position.lat + "," + allWaypoints[0].position.lng;
+  waypointString += "&start=" + allLocations[0].address.city + ";" + allLocations[0].position.lat + "," + allLocations[0].position.lng;
   // j = 1 because we've already used the first item (0) above
   //allWaypoints-2 because we stop on the 2nd to last item
-  if (allWaypoints.length > 2){
-    for (var j=1;j<=allWaypoints.length-2;j++)
+  if (allWaypoints.length > 0){
+    for (var j=0;j<allWaypoints.length;j++)
     {
       var tempString = "&destination" + j + "=";
       tempString += allWaypoints[j].address.city + ";";
       tempString += allWaypoints[j].position.lat + ","+allWaypoints[j].position.lng;
+      waypointString += tempString;
       console.log(tempString);
     }
-    waypointString += tempString;
-    waypointString += "&end=" + allWaypoints[j].address.city + ";" + allWaypoints[j].position.lat + "," + allWaypoints[j].position.lng;
+    waypointString += "&end=" + allLocations[1].address.city + ";" + allLocations[1].position.lat + "," + allLocations[1].position.lng;
   }
   else{
     waypointString += "&end=" + allWaypoints[1].address.city + ";" + allWaypoints[1].position.lat + "," + allWaypoints[1].position.lng;
