@@ -53,10 +53,18 @@ routeButton.onclick = () => {
   
   // allLocations[0] is start of journey
   allRoutes.push(allLocations[0]);
-  
-  allWaypoints.forEach(w => {
-    allRoutes.push(w);
-  });
+  var waypointRouteCounter = 0;
+  // allWaypoints.forEach(w => {
+  //   allRoutes.push(w);
+  //   waypointRouteCounter++;
+  //   console.log(w.address.city);
+  // });
+
+  for (var i = 0;i < allWaypoints.length;i++){
+    allRoutes.push(allWaypoints[i]);
+  }
+
+  console.log("waypointRouteCounter : " + waypointRouteCounter);
   // allLocations[1] is destination
   allRoutes.push(allLocations[1]);
 
@@ -88,6 +96,8 @@ waypointButton.onclick = () =>{
   var service = platform.getSearchService();
   
   addMapMarkers(service,destTextInput.value,allWaypoints);
+  destTextInput.value = "";
+  destTextInput.focus();
   
 }
 
@@ -97,7 +107,7 @@ function calcWaypoints(){
     return;
   }
   var waypointQuery = buildWaypointQueryString();
-  console.log(waypointQuery);
+  console.log(encodeURI(waypointQuery));
 }
 
 function buildWaypointQueryString(){
