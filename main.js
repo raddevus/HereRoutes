@@ -68,7 +68,7 @@ routeButton.onclick = () => {
   for (var i = 0;i < allRoutes.length-1;i++){
     calcRoute(allRoutes[i].position,allRoutes[i+1].position);
   }
-  
+  calcWaypoints();
 
 }
 
@@ -221,7 +221,9 @@ function addMarkerToGroup(marker, html) {
     * in the functions below:
     */
     addRouteShapeToMap(route);
-    //addWaypointsToPanel(route);
+    addWaypointsToPanel(route);
+    addManueversToPanel(route);
+    
     //allLocations = [];
   }
 
@@ -247,20 +249,50 @@ function addMarkerToGroup(marker, html) {
     });
   }
 
+  function addManueversToPanel(route){
+    var nodeOL = document.createElement('ol');
+  
+    nodeOL.style.fontSize = 'small';
+    nodeOL.style.marginLeft ='5%';
+    nodeOL.style.marginRight ='5%';
+    nodeOL.className = 'directions';
+  
+    route.sections.forEach((section) => {
+      console.log("Got route sections...*****")
+      section.actions.forEach((action, idx) => {
+        var li = document.createElement('li'),
+            spanArrow = document.createElement('span'),
+            spanInstruction = document.createElement('span');
+  
+        spanArrow.className = 'arrow ' + (action.direction || '') + action.action;
+        spanInstruction.innerHTML = section.actions[idx].instruction;
+        li.appendChild(spanArrow);
+        li.appendChild(spanInstruction);
+  
+        nodeOL.appendChild(li);
+      });
+    });
+  
+    routeInstructionsContainer.appendChild(nodeOL);
+  }
+
 function addWaypointsToPanel(route) {
   var nodeH3 = document.createElement('h3'),
       labels = [];
-
+  console.log("*** addWaypointsToPanel ***");
   route.sections.forEach((section) => {
-    labels.push(
-      section.turnByTurnActions[0].nextRoad.name[0].value)
-    labels.push(
-      section.turnByTurnActions[section.turnByTurnActions.length - 1].currentRoad.name[0].value)
-  });
+    //console.log(" ### got a section ###");
+    var nextRoadName = section.turnByTurnActions[0].nextRoad.name[0].value;
+    labels.push(nextRoadName);
+    var currentRoadName = section.turnByTurnActions[section.turnByTurnActions.length - 1].currentRoad.name[0].value;
+    labels.push(currentRoadName);
+    console.log(nextRoadName);
+  console.log(currentRoadName);
+    });
   
-  nodeH3.textContent = labels.join(' - ');
-  routeInstructionsContainer.innerHTML = '';
-  routeInstructionsContainer.appendChild(nodeH3);
+   nodeH3.textContent = labels.join(' - ');
+   routeInstructionsContainer.innerHTML = '';
+   routeInstructionsContainer.appendChild(nodeH3);
 }
 
 function onError(error) {
