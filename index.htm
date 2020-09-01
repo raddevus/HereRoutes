@@ -52,8 +52,7 @@
   <div id="mapContainer"></div>
   <div id="panel"></div>
   <div id="mydiv"></div>
-  <h3>Code</h3>
-  <script>
+    <script>
     // Initialize the platform object:
     var platform = new H.service.Platform({
     'apikey': YOUR_API_KEY // get the apikey from developer.here.com
@@ -72,6 +71,7 @@
     });
     var behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
     var ui = H.ui.UI.createDefault(map, maptypes);
+    // ui.setUnitSystem(H.ui.UnitSystem.IMPERIAL);
   </script>
   <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"

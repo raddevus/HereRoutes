@@ -6,13 +6,22 @@ var destTextInput = document.querySelector("#dest");
 var removeFromButton = document.querySelector("#removeFromButton");
 var removeDestButton = document.querySelector("#removeDestButton");
 var routeInstructionsContainer = document.querySelector("#panel");
+routeInstructionsContainer.innerHTML = '';
 
-console.log(map);
+var calcRouteCounter = 0; //for (var i = 0;i < allRoutes.length-1;i++){
+
 var group = null;
 var router = null;
 var routeRequestParams = null;
 var tripPoints = [];
 var allWaypoints = [];
+var allRoutePoints = [];
+var allRouteDistancesKm = [];
+var allRouteDistancesMi = [];
+var allMarkers = [];
+var locationsToAdd = [];
+
+// ui.setUnitSystem(H.ui.UnitSystem.IMPERIAL);
 
 tripButton.onclick = () => {
    
@@ -24,11 +33,12 @@ tripButton.onclick = () => {
   var service = platform.getSearchService();
   tripPoints = [];
   if (fromTextInput.value != ""){
-    addMapMarkers(service,fromTextInput.value,tripPoints);
+    locationsToAdd.push(fromTextInput.value);
   }
   if (destTextInput.value != ""){
-    addMapMarkers(service,destTextInput.value,tripPoints);
+    locationsToAdd.push(destTextInput.value);
   }
+  addMapMarkers(service,locationsToAdd,tripPoints);
 }
 
 function genRoute(){
@@ -49,26 +59,33 @@ routeButton.onclick = () => {
     return;
   }
   // 1. create temp array with all locations and waypoints
-  var allRoutes = [];
+  allRoutePoints = [];
+  
+  // move index 1 (2nd item) to end of array
+  var finalDestination = allMarkers.splice(1,1)[0];
+  allMarkers.push(finalDestination);
   
   // tripPoints[0] is start of journey
-  allRoutes.push(tripPoints[0]);
+  allRoutePoints.push(tripPoints[0]);
   var waypointRouteCounter = 0;
   
   for (var i = 0;i < allWaypoints.length;i++){
-    allRoutes.push(allWaypoints[i]);
+    allRoutePoints.push(allWaypoints[i]);
   }
 
   console.log("waypointRouteCounter : " + waypointRouteCounter);
   // tripPoints[1] is destination
-  allRoutes.push(tripPoints[1]);
+  allRoutePoints.push(tripPoints[1]);
 
-  console.log("allRoutes length : " + allRoutes.length);
+  console.log("allRoutes length : " + allRoutePoints.length);
   // 2. iterate thru and add each section of the entire route
-  for (var i = 0;i < allRoutes.length-1;i++){
-    calcRoute(allRoutes[i].position,allRoutes[i+1].position);
-  }
-  calcWaypoints();
+  // for (var i = 0;i < allRoutes.length-1;i++){
+  //   calcRoute(allRoutes[i].position,allRoutes[i+1].position);
+  // }
+  calcRouteCounter = 0;
+  calcRoute();
+  //calcWaypoints();
+  
 
 }
 
@@ -83,6 +100,11 @@ removeDestButton.onclick = () => {
 }
 
 waypointButton.onclick = () =>{
+  if (destTextInput.value == ""){
+    alert("Please add a waypoint destination.");
+    destTextInput.focus();
+    return;
+  }
   var platform = new H.service.Platform({
     'apikey': YOUR_API_KEY
   });
@@ -90,7 +112,7 @@ waypointButton.onclick = () =>{
   // Get an instance of the geocoding service:
   var service = platform.getSearchService();
   
-  addMapMarkers(service,destTextInput.value,allWaypoints);
+  addMapMarkers(service,[destTextInput.value],allWaypoints);
   destTextInput.value = "";
   destTextInput.focus();
   
@@ -140,24 +162,37 @@ function buildWaypointQueryString(){
 }
 
 
-function addMapMarkers(service, textInputValue, targetArray){
+function addMapMarkers(service, locationsToSearchArray, targetArray){
+  console.log(locationsToSearchArray);
   // Call the geocode method with the geocoding parameters,
   // the callback and an error callback function (called if a
   // communication error occurs):
-  service.geocode({
-    q: textInputValue
-  }, (result) => {
-    // Add a marker for each location found
-    result.items.forEach((item) => {
-        console.log(item);
-        targetArray.push(item);
-        var html = "<div>" + item.title + "</div>";
-        var marker = new H.map.Marker(item.position)
-        group = new H.map.Group();
-        map.addObject(group);
-        addInfoBubble(marker,html);
-    });
-  }, alert);
+  var searchText = locationsToSearchArray[0];
+  if (locationsToSearchArray.length > 0){
+    service.geocode({
+      q: searchText
+    }, (result) => {
+      // Add a marker for each location found
+      var x = result;//.items[0];
+      var item = x.items[0];
+      console.log(item);
+      targetArray.push(item);
+      var html = "<div>" + item.title + "</div>";
+      var marker = new H.map.Marker(item.position)
+      allMarkers.push(marker);
+      group = new H.map.Group();
+      map.addObject(group);
+      addInfoBubble(marker,html);
+      locationsToSearchArray.shift(0);
+      console.log(locationsToSearchArray);
+      addMapMarkers(service,locationsToSearchArray,targetArray);
+      
+    }, alert);
+  }
+  else{
+    // we are done.
+    return;
+  }
 }
 
 function addMarkerToGroup(marker, html) {
@@ -173,7 +208,6 @@ function addMarkerToGroup(marker, html) {
     console.log("addInfoBubble...");
     // add 'tap' event listener, that opens info bubble, to the group
     group.addEventListener('tap', function (evt) {
-        console.log("tapped");
       // event target is the marker itself, group is a parent event target
       // for all objects that it contains
       var bubble =  new H.ui.InfoBubble(evt.target.getGeometry(), {
@@ -183,22 +217,21 @@ function addMarkerToGroup(marker, html) {
       // show info bubble
       ui.addBubble(bubble);
     }, false);
-  
     addMarkerToGroup(marker,html );
   
   }
 
-  function calcRoute(start,end){
+  function calcRoute(){
       console.log("#######");
-      console.log(start);
-      console.log(end);
-    
-    router = platform.getRoutingService(null, 8),
+      // console.log(start);
+      // console.log(end);
+    //console.log(allRoutes[calcRouteCounter]); return;
+    router = platform.getRoutingService(null,8),
       routeRequestParams = {
         routingMode: 'fast',
         transportMode: 'car',
-        origin: start.lat+","+start.lng, 
-        destination: end.lat+","+end.lng,
+        origin: allRoutePoints[calcRouteCounter].position.lat+","+allRoutePoints[calcRouteCounter].position.lng, 
+        destination: allRoutePoints[calcRouteCounter+1].position.lat+","+allRoutePoints[calcRouteCounter+1].position.lng,
         return: 'polyline,turnByTurnActions,actions,instructions,travelSummary'
       };
     
@@ -208,23 +241,37 @@ function addMarkerToGroup(marker, html) {
         onSuccess,
         onError
     );
-  
   }
 
   function onSuccess(result) {
       console.log("******");
       console.log(result);
       var route = result.routes[0];
-   /*
-    * The styling of the route response on the map is entirely under the developer's control.
-    * A representitive styling can be found the full JS + HTML code of this example
-    * in the functions below:
-    */
+      var kilometers = route.sections[0].travelSummary.length / 1000;
+      allRouteDistancesKm.push(kilometers);
+      var miles = (kilometers * 0.6213712).toFixed(2);
+      allRouteDistancesMi.push(miles);
+      var msg = "travel distance - " + kilometers + "km (" + miles +"mi)";
+      console.log(msg);
+
+   console.log(" ###**** ##### ADDING : " + route);
+   console.log(route);
     addRouteShapeToMap(route);
-    addWaypointsToPanel(route);
+    //addWaypointsToPanel(route);
     addManueversToPanel(route);
-    
-    //allLocations = [];
+    calcRouteCounter++;
+    if (calcRouteCounter < allRoutePoints.length-1){
+      
+      calcRoute();
+    }
+    if (calcRouteCounter == allRoutePoints.length-1){
+      for (var i = 1;i<allMarkers.length;i++){
+        var msg = "<div>" + allRouteDistancesMi[i-1] + "</div>" + allMarkers[i].data;
+        console.log(msg);
+        allMarkers[i].setData(msg);
+      }
+    }
+
   }
 
   function addRouteShapeToMap(route){
