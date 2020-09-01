@@ -18,6 +18,7 @@ var allWaypoints = [];
 var allRoutePoints = [];
 var allRouteDistancesKm = [];
 var allRouteDistancesMi = [];
+var allRouteDurations = [];
 var allMarkers = [];
 var locationsToAdd = [];
 
@@ -250,8 +251,12 @@ function addMarkerToGroup(marker, html) {
       var kilometers = route.sections[0].travelSummary.length / 1000;
       allRouteDistancesKm.push(kilometers);
       var miles = (kilometers * 0.6213712).toFixed(2);
+      var hours = Math.trunc(route.sections[0].travelSummary.duration / 3600); 
+      console.log((route.sections[0].travelSummary.duration / 3600).toString());
+      var minutes = Math.trunc((("." + ((route.sections[0].travelSummary.duration / 3600).toString().split(".")[1]))*1)*60);
       allRouteDistancesMi.push(miles);
       var msg = "travel distance - " + kilometers + "km (" + miles +"mi)";
+      allRouteDurations.push(hours +"h  " + minutes+"m  ");
       console.log(msg);
 
    console.log(" ###**** ##### ADDING : " + route);
@@ -266,7 +271,8 @@ function addMarkerToGroup(marker, html) {
     }
     if (calcRouteCounter == allRoutePoints.length-1){
       for (var i = 1;i<allMarkers.length;i++){
-        var msg = "<div>" + allRouteDistancesMi[i-1] + "</div>" + allMarkers[i].data;
+        var msg = "<div>" + allRouteDistancesMi[i-1] + "mi</div>";
+        msg += "<div>" + allRouteDurations[i-1] + "</div>" + allMarkers[i].data;
         console.log(msg);
         allMarkers[i].setData(msg);
       }
