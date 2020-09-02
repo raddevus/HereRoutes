@@ -322,25 +322,6 @@ function addManueversToPanel(route){
   routeInstructionsContainer.appendChild(nodeOL);
 }
 
-function addWaypointsToPanel(route) {
-  var nodeH3 = document.createElement('h3'),
-      labels = [];
-  console.log("*** addWaypointsToPanel ***");
-  route.sections.forEach((section) => {
-    //console.log(" ### got a section ###");
-    var nextRoadName = section.turnByTurnActions[0].nextRoad.name[0].value;
-    labels.push(nextRoadName);
-    var currentRoadName = section.turnByTurnActions[section.turnByTurnActions.length - 1].currentRoad.name[0].value;
-    labels.push(currentRoadName);
-    console.log(nextRoadName);
-    console.log(currentRoadName);
-  });
-  
-  nodeH3.textContent = labels.join(' - ');
-  routeInstructionsContainer.innerHTML = '';
-  routeInstructionsContainer.appendChild(nodeH3);
-}
-
 function onError(error) {
   alert('Can\'t reach the remote server');
 }
