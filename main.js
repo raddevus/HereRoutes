@@ -8,7 +8,7 @@ var removeDestButton = document.querySelector("#removeDestButton");
 var routeInstructionsContainer = document.querySelector("#panel");
 routeInstructionsContainer.innerHTML = '';
 
-var calcRouteCounter = 0; //for (var i = 0;i < allRoutes.length-1;i++){
+var calcRouteCounter = 0; 
 
 var group = null;
 var router = null;
@@ -22,7 +22,7 @@ var allRouteDurations = [];
 var allMarkers = [];
 var locationsToAdd = [];
 
-// ui.setUnitSystem(H.ui.UnitSystem.IMPERIAL);
+ui.setUnitSystem(H.ui.UnitSystem.IMPERIAL);
 
 tripButton.onclick = () => {
    
@@ -84,8 +84,9 @@ routeButton.onclick = () => {
   //   calcRoute(allRoutes[i].position,allRoutes[i+1].position);
   // }
   calcRouteCounter = 0;
+  // RAD 09-02-2020 calcRoute();
   calcRoute();
-  //calcWaypoints();
+  calcWaypoints();
   
 
 }
@@ -101,8 +102,10 @@ removeDestButton.onclick = () => {
 }
 
 waypointButton.onclick = () =>{
-  if (destTextInput.value == ""){
+  if (destTextInput.value.trim() == ""){
     alert("Please add a waypoint destination.");
+    // insures the input is blank (in case user added spaces)
+    destTextInput.value = "";
     destTextInput.focus();
     return;
   }
@@ -126,6 +129,12 @@ function calcWaypoints(){
   }
   var waypointQuery = buildWaypointQueryString();
   console.log(encodeURI(waypointQuery));
+  fetch(waypointQuery)
+  .then(response => response.json())
+  .then(data => {
+    console.log(data);
+    calculateDistanceAndTimeFromWaypointData(data.results[0]);
+  });
 }
 
 function buildWaypointQueryString(){
@@ -223,10 +232,7 @@ function addMarkerToGroup(marker, html) {
   }
 
   function calcRoute(){
-      console.log("#######");
-      // console.log(start);
-      // console.log(end);
-    //console.log(allRoutes[calcRouteCounter]); return;
+    console.log("#######");
     router = platform.getRoutingService(null,8),
       routeRequestParams = {
         routingMode: 'fast',
@@ -245,39 +251,71 @@ function addMarkerToGroup(marker, html) {
   }
 
   function onSuccess(result) {
-      console.log("******");
-      console.log(result);
-      var route = result.routes[0];
-      var kilometers = route.sections[0].travelSummary.length / 1000;
-      allRouteDistancesKm.push(kilometers);
-      var miles = (kilometers * 0.6213712).toFixed(2);
-      var hours = Math.trunc(route.sections[0].travelSummary.duration / 3600); 
-      console.log((route.sections[0].travelSummary.duration / 3600).toString());
-      var minutes = Math.trunc((("." + ((route.sections[0].travelSummary.duration / 3600).toString().split(".")[1]))*1)*60);
-      allRouteDistancesMi.push(miles);
-      var msg = "travel distance - " + kilometers + "km (" + miles +"mi)";
-      allRouteDurations.push(hours +"h  " + minutes+"m  ");
-      console.log(msg);
-
-   console.log(" ###**** ##### ADDING : " + route);
-   console.log(route);
+      
+    var route = result.routes[0];
+    calculateDistanceAndTime(route);
+    console.log(" ###**** ##### ADDING ROUTE ##### ");
+    console.log(route);
     addRouteShapeToMap(route);
     //addWaypointsToPanel(route);
     addManueversToPanel(route);
     calcRouteCounter++;
     if (calcRouteCounter < allRoutePoints.length-1){
-      
       calcRoute();
     }
     if (calcRouteCounter == allRoutePoints.length-1){
-      for (var i = 1;i<allMarkers.length;i++){
-        var msg = "<div>" + allRouteDistancesMi[i-1] + "mi</div>";
-        msg += "<div>" + allRouteDurations[i-1] + "</div>" + allMarkers[i].data;
-        console.log(msg);
-        allMarkers[i].setData(msg);
-      }
+      UpdateMapMarkersWithDistanceAndTimeData();
     }
+  }
 
+  function UpdateMapMarkersWithDistanceAndTimeData(){
+    // Update Map Markers with Distance & Time Data
+    for (var i = 0;i<allMarkers.length;i++){
+      var msg = "<div>" + allRouteDistancesMi[i] + "mi</div>";
+      msg += "<div>" + allRouteDurations[i] + "</div>" + allMarkers[i].data;
+      console.log(msg);
+      allMarkers[i].setData(msg);
+    }
+  }
+
+  function calculateDistanceAndTimeFromWaypointData(waypointData){
+    // ## Determining Total Distance & Time of Trip  ###
+    var kilometers = waypointData.distance / 1000;
+    allRouteDistancesKm.push(kilometers);
+    var miles = (kilometers * 0.6213712).toFixed(2);
+    var hours = Math.trunc(waypointData.time / 3600);
+    var minutes = Math.trunc((("." + ((waypointData.time  / 3600).toString().split(".")[1]))*1)*60);
+    allRouteDistancesMi.push(miles);
+    allRouteDurations.push(hours +"h  " + minutes+"m  ");
+    // ## Determining Each Leg Distance & Time #####
+    waypointData.interconnections.forEach(item => {
+      console.log("******");
+      kilometers = item.distance / 1000;
+      allRouteDistancesKm.push(kilometers);
+      miles = (kilometers * 0.6213712).toFixed(2);
+      hours = Math.trunc(item.time / 3600); 
+      console.log((item.time / 3600).toString());
+      minutes = Math.trunc((("." + ((item.time / 3600).toString().split(".")[1]))*1)*60);
+      allRouteDistancesMi.push(miles);
+      var msg = "travel distance - " + kilometers + "km (" + miles +"mi)";
+      allRouteDurations.push(hours +"h  " + minutes+"m  ");
+      console.log(msg);
+    });
+    UpdateMapMarkersWithDistanceAndTimeData();
+  }
+
+  function calculateDistanceAndTime(route){
+    console.log("******");
+    var kilometers = route.sections[0].travelSummary.length / 1000;
+    allRouteDistancesKm.push(kilometers);
+    var miles = (kilometers * 0.6213712).toFixed(2);
+    var hours = Math.trunc(route.sections[0].travelSummary.duration / 3600); 
+    console.log((route.sections[0].travelSummary.duration / 3600).toString());
+    var minutes = Math.trunc((("." + ((route.sections[0].travelSummary.duration / 3600).toString().split(".")[1]))*1)*60);
+    allRouteDistancesMi.push(miles);
+    var msg = "travel distance - " + kilometers + "km (" + miles +"mi)";
+    allRouteDurations.push(hours +"h  " + minutes+"m  ");
+    console.log(msg);
   }
 
   function addRouteShapeToMap(route){
