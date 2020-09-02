@@ -9,7 +9,6 @@ var routeInstructionsContainer = document.querySelector("#panel");
 routeInstructionsContainer.innerHTML = '';
 
 var calcRouteCounter = 0; 
-
 var group = null;
 var router = null;
 var routeRequestParams = null;
@@ -22,10 +21,25 @@ var allRouteDurations = [];
 var allMarkers = [];
 var locationsToAdd = [];
 
+function initializeValues(){
+  calcRouteCounter = 0; 
+  group = null;
+  router = null;
+  routeRequestParams = null;
+  tripPoints = [];
+  allWaypoints = [];
+  allRoutePoints = [];
+  allRouteDistancesKm = [];
+  allRouteDistancesMi = [];
+  allRouteDurations = [];
+  allMarkers = [];
+  locationsToAdd = [];
+}
+
 ui.setUnitSystem(H.ui.UnitSystem.IMPERIAL);
 
 tripButton.onclick = () => {
-   
+  initializeValues();
   var platform = new H.service.Platform({
       'apikey': YOUR_API_KEY
     });
@@ -42,21 +56,9 @@ tripButton.onclick = () => {
   addMapMarkers(service,locationsToAdd,tripPoints);
 }
 
-function genRoute(){
-  var origin = tripPoints[0].position.lat + "," + tripPoints[0].position.lng;
-  var dest = tripPoints[1].position.lat + "," + tripPoints[1].position.lng;
-  var finalUrl = 'https://router.hereapi.com/v8/routes?transportMode=car&origin=' + origin + '&destination=' + dest + '&return=polyline,turnByTurnActions,actions,instructions,travelSummary&apikey=' + YOUR_API_KEY;
-  console.log(finalUrl);
-  fetch(finalUrl)
-  .then(response => response.json())
-  .then(data => addRouteShapeToMap(data.routes[0]));
-
-}
-
 routeButton.onclick = () => {
-  //genRoute(); return;
   if (tripPoints.length < 2){
-    console.log("need add start and end (trip points) first");
+    alert("Please add a trip (From & To trip points) first.");
     return;
   }
   // 1. create temp array with all locations and waypoints
@@ -68,26 +70,17 @@ routeButton.onclick = () => {
   
   // tripPoints[0] is start of journey
   allRoutePoints.push(tripPoints[0]);
-  var waypointRouteCounter = 0;
   
   for (var i = 0;i < allWaypoints.length;i++){
     allRoutePoints.push(allWaypoints[i]);
   }
 
-  console.log("waypointRouteCounter : " + waypointRouteCounter);
   // tripPoints[1] is destination
   allRoutePoints.push(tripPoints[1]);
-
-  console.log("allRoutes length : " + allRoutePoints.length);
-  // 2. iterate thru and add each section of the entire route
-  // for (var i = 0;i < allRoutes.length-1;i++){
-  //   calcRoute(allRoutes[i].position,allRoutes[i+1].position);
-  // }
+  
   calcRouteCounter = 0;
-  // RAD 09-02-2020 calcRoute();
   calcRoute();
   calcWaypoints();
-  
 
 }
 
@@ -103,7 +96,7 @@ removeDestButton.onclick = () => {
 
 waypointButton.onclick = () =>{
   if (destTextInput.value.trim() == ""){
-    alert("Please add a waypoint destination.");
+    alert("Please add a waypoint destination value.");
     // insures the input is blank (in case user added spaces)
     destTextInput.value = "";
     destTextInput.focus();
@@ -153,27 +146,13 @@ function buildWaypointQueryString(){
   }
   
   waypointString += "&end=" + tripPoints[1].address.city + ";" + tripPoints[1].position.lat + "," + tripPoints[1].position.lng;
-  
   waypointString += "&improveFor=distance";
   waypointString += "&mode=fastest;car";  
-  // allWaypoints.forEach((w) =>{
-  //     console.log(w.address.city);
-  //     console.log(w.position.lat);
-  //     console.log(w.position.lng);
-  //   });
-  /* 
-  &destination1=FranfurtCentralStation;50.1073,8.6647
-  &destination2=DarmstadtCentralStation;49.8728,8.6326
-  &destination3=FrankfurtAirport;50.0505,8.5698
-  &destination4=HanauCentralStation;50.1218,8.9298
-  &end=MainzCentralStation;50.0021,8.259
-  &improveFor=time&mode=fastest;car;traffic:enabled; */
   return waypointString;
 }
 
 
 function addMapMarkers(service, locationsToSearchArray, targetArray){
-  console.log(locationsToSearchArray);
   // Call the geocode method with the geocoding parameters,
   // the callback and an error callback function (called if a
   // communication error occurs):
@@ -183,8 +162,7 @@ function addMapMarkers(service, locationsToSearchArray, targetArray){
       q: searchText
     }, (result) => {
       // Add a marker for each location found
-      var x = result;//.items[0];
-      var item = x.items[0];
+      var item = result.items[0];
       console.log(item);
       targetArray.push(item);
       var cityName = item.title.split(",")[0] + " " + item.title.split(",")[1];
@@ -195,9 +173,7 @@ function addMapMarkers(service, locationsToSearchArray, targetArray){
       map.addObject(group);
       addInfoBubble(marker,html);
       locationsToSearchArray.shift(0);
-      console.log(locationsToSearchArray);
       addMapMarkers(service,locationsToSearchArray,targetArray);
-      
     }, alert);
   }
   else{
@@ -209,14 +185,10 @@ function addMapMarkers(service, locationsToSearchArray, targetArray){
 function addMarkerToGroup(marker, html) {
     // add custom data to the marker
     marker.setData(html);
-    console.log("setData...");
     group.addObject(marker);
-    console.log("added to group");
-    
   }
 
   function addInfoBubble(marker,html) {
-    console.log("addInfoBubble...");
     // add 'tap' event listener, that opens info bubble, to the group
     group.addEventListener('tap', function (evt) {
       // event target is the marker itself, group is a parent event target
@@ -257,7 +229,6 @@ function addMarkerToGroup(marker, html) {
     console.log(" ###**** ##### ADDING ROUTE ##### ");
     console.log(route);
     addRouteShapeToMap(route);
-    //addWaypointsToPanel(route);
     addManueversToPanel(route);
     calcRouteCounter++;
     if (calcRouteCounter < allRoutePoints.length-1){
