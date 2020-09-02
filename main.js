@@ -187,7 +187,8 @@ function addMapMarkers(service, locationsToSearchArray, targetArray){
       var item = x.items[0];
       console.log(item);
       targetArray.push(item);
-      var html = "<div>" + item.title + "</div>";
+      var cityName = item.title.split(",")[0] + " " + item.title.split(",")[1];
+      var html = "<div>" + cityName + "</div>";
       var marker = new H.map.Marker(item.position)
       allMarkers.push(marker);
       group = new H.map.Group();
@@ -253,7 +254,6 @@ function addMarkerToGroup(marker, html) {
   function onSuccess(result) {
       
     var route = result.routes[0];
-    calculateDistanceAndTime(route);
     console.log(" ###**** ##### ADDING ROUTE ##### ");
     console.log(route);
     addRouteShapeToMap(route);
