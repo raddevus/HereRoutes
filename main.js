@@ -153,9 +153,9 @@ function buildWaypointQueryString(){
 
 
 function addMapMarkers(service, locationsToSearchArray, targetArray){
-  // Call the geocode method with the geocoding parameters,
-  // the callback and an error callback function (called if a
-  // communication error occurs):
+  
+  // This function will add from 1 to many markers to the map,
+  // depending on the number of search items in the locationsToSearchArray
   var searchText = locationsToSearchArray[0];
   if (locationsToSearchArray.length > 0){
     service.geocode({
@@ -173,158 +173,154 @@ function addMapMarkers(service, locationsToSearchArray, targetArray){
       map.addObject(group);
       addInfoBubble(marker,html);
       locationsToSearchArray.shift(0);
-      addMapMarkers(service,locationsToSearchArray,targetArray);
+      if (locationsToSearchArray.length > 0){
+        addMapMarkers(service,locationsToSearchArray,targetArray);
+      }
     }, alert);
-  }
-  else{
-    // we are done.
-    return;
   }
 }
 
 function addMarkerToGroup(marker, html) {
-    // add custom data to the marker
-    marker.setData(html);
-    group.addObject(marker);
-  }
+  // add custom data to the marker
+  marker.setData(html);
+  group.addObject(marker);
+}
 
-  function addInfoBubble(marker,html) {
-    // add 'tap' event listener, that opens info bubble, to the group
-    group.addEventListener('tap', function (evt) {
-      // event target is the marker itself, group is a parent event target
-      // for all objects that it contains
-      var bubble =  new H.ui.InfoBubble(evt.target.getGeometry(), {
-        // read custom data
-        content: evt.target.getData()
-      });
-      // show info bubble
-      ui.addBubble(bubble);
-    }, false);
-    addMarkerToGroup(marker,html );
+function addInfoBubble(marker,html) {
+  // add 'tap' event listener, that opens info bubble, to the group
+  group.addEventListener('tap', function (evt) {
+    // event target is the marker itself, group is a parent event target
+    // for all objects that it contains
+    var bubble =  new H.ui.InfoBubble(evt.target.getGeometry(), {
+      // read custom data
+      content: evt.target.getData()
+    });
+    // show info bubble
+    ui.addBubble(bubble);
+  }, false);
+  addMarkerToGroup(marker,html );
+}
+
+function calcRoute(){
+  console.log("#######");
+  router = platform.getRoutingService(null,8),
+    routeRequestParams = {
+      routingMode: 'fast',
+      transportMode: 'car',
+      origin: allRoutePoints[calcRouteCounter].position.lat+","+allRoutePoints[calcRouteCounter].position.lng, 
+      destination: allRoutePoints[calcRouteCounter+1].position.lat+","+allRoutePoints[calcRouteCounter+1].position.lng,
+      return: 'polyline,turnByTurnActions,actions,instructions,travelSummary'
+    };
   
+
+  router.calculateRoute(
+      routeRequestParams,
+      onSuccess,
+      onError
+  );
+}
+
+function onSuccess(result) {
+  var route = result.routes[0];
+  console.log(" ###**** ##### ADDING ROUTE ##### ");
+  console.log(route);
+  addRouteShapeToMap(route);
+  addManueversToPanel(route);
+  calcRouteCounter++;
+  if (calcRouteCounter < allRoutePoints.length-1){
+    calcRoute();
   }
+}
 
-  function calcRoute(){
-    console.log("#######");
-    router = platform.getRoutingService(null,8),
-      routeRequestParams = {
-        routingMode: 'fast',
-        transportMode: 'car',
-        origin: allRoutePoints[calcRouteCounter].position.lat+","+allRoutePoints[calcRouteCounter].position.lng, 
-        destination: allRoutePoints[calcRouteCounter+1].position.lat+","+allRoutePoints[calcRouteCounter+1].position.lng,
-        return: 'polyline,turnByTurnActions,actions,instructions,travelSummary'
-      };
-    
-
-    router.calculateRoute(
-        routeRequestParams,
-        onSuccess,
-        onError
-    );
-  }
-
-  function onSuccess(result) {
-      
-    var route = result.routes[0];
-    console.log(" ###**** ##### ADDING ROUTE ##### ");
-    console.log(route);
-    addRouteShapeToMap(route);
-    addManueversToPanel(route);
-    calcRouteCounter++;
-    if (calcRouteCounter < allRoutePoints.length-1){
-      calcRoute();
+function UpdateMapMarkersWithDistanceAndTimeData(){
+  // Update Map Markers with Distance & Time Data
+  for (var i = 0;i<allMarkers.length;i++){
+    // add special trip totals header, only once
+    var msg = "";
+    if (i == 0){
+      msg = "<div><strong>Trip Totals</strong></div>";
     }
+    msg += "<div>" + allRouteDistancesMi[i] + "mi</div>";
+    msg += "<div>" + allRouteDurations[i] + "</div>" + allMarkers[i].data;
+    console.log(msg);
+    allMarkers[i].setData(msg);
   }
+}
 
-  function UpdateMapMarkersWithDistanceAndTimeData(){
-    // Update Map Markers with Distance & Time Data
-    for (var i = 0;i<allMarkers.length;i++){
-      // add special trip totals header, only once
-      var msg = "";
-      if (i == 0){
-        msg = "<div><strong>Trip Totals</strong></div>";
-      }
-      msg += "<div>" + allRouteDistancesMi[i] + "mi</div>";
-      msg += "<div>" + allRouteDurations[i] + "</div>" + allMarkers[i].data;
-      console.log(msg);
-      allMarkers[i].setData(msg);
-    }
-  }
-
-  function calculateDistanceAndTimeFromWaypointData(waypointData){
-    // ## Determining Total Distance & Time of Trip  ###
-    var kilometers = waypointData.distance / 1000;
+function calculateDistanceAndTimeFromWaypointData(waypointData){
+  // ## Determining Total Distance & Time of Trip  ###
+  var kilometers = waypointData.distance / 1000;
+  allRouteDistancesKm.push(kilometers);
+  var miles = (kilometers * 0.6213712).toFixed(2);
+  var hours = Math.trunc(waypointData.time / 3600);
+  var minutes = Math.trunc((("." + ((waypointData.time  / 3600).toString().split(".")[1]))*1)*60);
+  allRouteDistancesMi.push(miles);
+  allRouteDurations.push(hours +"h  " + minutes+"m  ");
+  // ## Determining Each Leg Distance & Time #####
+  waypointData.interconnections.forEach(item => {
+    console.log("******");
+    kilometers = item.distance / 1000;
     allRouteDistancesKm.push(kilometers);
-    var miles = (kilometers * 0.6213712).toFixed(2);
-    var hours = Math.trunc(waypointData.time / 3600);
-    var minutes = Math.trunc((("." + ((waypointData.time  / 3600).toString().split(".")[1]))*1)*60);
+    miles = (kilometers * 0.6213712).toFixed(2);
+    hours = Math.trunc(item.time / 3600); 
+    console.log((item.time / 3600).toString());
+    minutes = Math.trunc((("." + ((item.time / 3600).toString().split(".")[1]))*1)*60);
     allRouteDistancesMi.push(miles);
+    var msg = "travel distance - " + kilometers + "km (" + miles +"mi)";
     allRouteDurations.push(hours +"h  " + minutes+"m  ");
-    // ## Determining Each Leg Distance & Time #####
-    waypointData.interconnections.forEach(item => {
-      console.log("******");
-      kilometers = item.distance / 1000;
-      allRouteDistancesKm.push(kilometers);
-      miles = (kilometers * 0.6213712).toFixed(2);
-      hours = Math.trunc(item.time / 3600); 
-      console.log((item.time / 3600).toString());
-      minutes = Math.trunc((("." + ((item.time / 3600).toString().split(".")[1]))*1)*60);
-      allRouteDistancesMi.push(miles);
-      var msg = "travel distance - " + kilometers + "km (" + miles +"mi)";
-      allRouteDurations.push(hours +"h  " + minutes+"m  ");
-      console.log(msg);
-    });
-    UpdateMapMarkersWithDistanceAndTimeData();
-  }
+    console.log(msg);
+  });
+  UpdateMapMarkersWithDistanceAndTimeData();
+}
 
-  function addRouteShapeToMap(route){
-    route.sections.forEach((section) => {
-      // decode LineString from the flexible polyline
-      let linestring = H.geo.LineString.fromFlexiblePolyline(section.polyline);
-  
-      // Create a polyline to display the route:
-      let polyline = new H.map.Polyline(linestring, {
-        style: {
-          lineWidth: 4,
-          strokeColor: 'rgba(0, 128, 255, 0.7)'
-        }
-      });
-  
-      // Add the polyline to the map
-      map.addObject(polyline);
-      // And zoom to its bounding rectangle
-      map.getViewModel().setLookAtData({
-        bounds: polyline.getBoundingBox()
-      });
-    });
-  }
+function addRouteShapeToMap(route){
+  route.sections.forEach((section) => {
+    // decode LineString from the flexible polyline
+    let linestring = H.geo.LineString.fromFlexiblePolyline(section.polyline);
 
-  function addManueversToPanel(route){
-    var nodeOL = document.createElement('ol');
-  
-    nodeOL.style.fontSize = 'small';
-    nodeOL.style.marginLeft ='5%';
-    nodeOL.style.marginRight ='5%';
-    nodeOL.className = 'directions';
-  
-    route.sections.forEach((section) => {
-      console.log("Got route sections...*****")
-      section.actions.forEach((action, idx) => {
-        var li = document.createElement('li'),
-            spanArrow = document.createElement('span'),
-            spanInstruction = document.createElement('span');
-  
-        spanArrow.className = 'arrow ' + (action.direction || '') + action.action;
-        spanInstruction.innerHTML = section.actions[idx].instruction;
-        li.appendChild(spanArrow);
-        li.appendChild(spanInstruction);
-  
-        nodeOL.appendChild(li);
-      });
+    // Create a polyline to display the route:
+    let polyline = new H.map.Polyline(linestring, {
+      style: {
+        lineWidth: 4,
+        strokeColor: 'rgba(0, 128, 255, 0.7)'
+      }
     });
-  
-    routeInstructionsContainer.appendChild(nodeOL);
-  }
+
+    // Add the polyline to the map
+    map.addObject(polyline);
+    // And zoom to its bounding rectangle
+    map.getViewModel().setLookAtData({
+      bounds: polyline.getBoundingBox()
+    });
+  });
+}
+
+function addManueversToPanel(route){
+  var nodeOL = document.createElement('ol');
+
+  nodeOL.style.fontSize = 'small';
+  nodeOL.style.marginLeft ='5%';
+  nodeOL.style.marginRight ='5%';
+  nodeOL.className = 'directions';
+
+  route.sections.forEach((section) => {
+    console.log("Got route sections...*****")
+    section.actions.forEach((action, idx) => {
+      var li = document.createElement('li'),
+          spanArrow = document.createElement('span'),
+          spanInstruction = document.createElement('span');
+
+      spanArrow.className = 'arrow ' + (action.direction || '') + action.action;
+      spanInstruction.innerHTML = section.actions[idx].instruction;
+      li.appendChild(spanArrow);
+      li.appendChild(spanInstruction);
+
+      nodeOL.appendChild(li);
+    });
+  });
+
+  routeInstructionsContainer.appendChild(nodeOL);
+}
 
 function addWaypointsToPanel(route) {
   var nodeH3 = document.createElement('h3'),
@@ -337,12 +333,12 @@ function addWaypointsToPanel(route) {
     var currentRoadName = section.turnByTurnActions[section.turnByTurnActions.length - 1].currentRoad.name[0].value;
     labels.push(currentRoadName);
     console.log(nextRoadName);
-  console.log(currentRoadName);
-    });
+    console.log(currentRoadName);
+  });
   
-   nodeH3.textContent = labels.join(' - ');
-   routeInstructionsContainer.innerHTML = '';
-   routeInstructionsContainer.appendChild(nodeH3);
+  nodeH3.textContent = labels.join(' - ');
+  routeInstructionsContainer.innerHTML = '';
+  routeInstructionsContainer.appendChild(nodeH3);
 }
 
 function onError(error) {
